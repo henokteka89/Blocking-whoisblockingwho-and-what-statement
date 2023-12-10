@@ -1,0 +1,18 @@
+--checks the ongoing blocking, reports the blocker and blocked processes, and the blocking statement. 
+
+Select s.session_id as Blocked_Spid, db_name(r.database_id) as [Database], 
+Case
+When s.login_name = '' then s.original_login_name else s.login_name end as [Login],
+r.start_time, datediff(minute, r.start_time, getdate()) as [Exec Time (min)], s.host_name, r.status, percent_complete, 
+
+r.blocking_session_id as Blocker_Spid, r.wait_time, r.cpu_time, s.memory_usage, text
+from sys.dm_exec_sessions s
+inner join sys.dm_exec_requests r
+cross apply sys.dm_exec_sql_text(r.sql_handle) 
+on s.session_id = r.session_id
+where s.session_id <> @@spid
+and login_name <> 'NT AUTHORITY\SYSTEM '
+and db_name(r.database_id) <> ''
+order by [Exec Time (min)]desc
+
+ 
